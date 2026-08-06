@@ -1,17 +1,15 @@
-"""
-Groq API integration.
-
-Handles locating the API key, creating a cached client, and sending the
-chat completion request.
-"""
-
 import os
 from pathlib import Path
+from typing import Any
 
 import streamlit as st
-from groq import Groq
 
 from config import MAX_TOKENS
+
+try:
+    from groq import Groq
+except ImportError:  # pragma: no cover - handled for Streamlit deployment
+    Groq = Any  # type: ignore[misc]
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_FILE = PROJECT_ROOT / ".env"
@@ -54,11 +52,13 @@ def get_api_key() -> str | None:
 
 
 @st.cache_resource(show_spinner=False)
-def get_client(api_key: str) -> Groq:
+def get_client(api_key: str) -> Any:
+    if "Groq" not in globals() or getattr(globals()["Groq"], "__module__", "") != "groq":
+        raise RuntimeError("The 'groq' package is not installed. Install it to use the chatbot.")
     return Groq(api_key=api_key)
 
 
-def call_groq(client: Groq, messages: list[dict], model: str, temperature: float) -> str:
+def call_groq(client: Any, messages: list[dict], model: str, temperature: float) -> str:
     """Send the full message history to Groq and return the assistant's reply text."""
     response = client.chat.completions.create(
         model=model,
