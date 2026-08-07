@@ -6,6 +6,11 @@ from components.groq_service import get_api_key, get_client
 from components.sidebar import render_sidebar
 from components.chat_ui import render_message_history, handle_user_turn
 
+try:
+    import groq  # noqa: F401
+except ImportError:
+    groq = None
+
 # --- Page setup ---
 st.set_page_config(page_title=PAGE_TITLE, layout="centered")
 init_session_state()
@@ -18,6 +23,10 @@ st.title(f"Memory Chatbot ")
 st.caption("A stateful chat terminal that remembers your conversation during this session.")
 
 # --- API key / client setup ---
+if groq is None:
+    st.error("The 'groq' package is not available in this environment. Please ensure dependencies are installed before running the app.")
+    st.stop()
+
 api_key = get_api_key()
 
 if not api_key:
