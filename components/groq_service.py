@@ -1,4 +1,5 @@
 import os
+import tomllib
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +37,7 @@ _load_env_file()
 
 
 def get_api_key() -> str | None:
-    """Check Streamlit secrets first, then fall back to environment variables."""
+    """Check Streamlit secrets first, then fall back to environment variables and a local secrets file."""
     try:
         if "GROQ_API_KEY" in st.secrets:
             value = st.secrets["GROQ_API_KEY"]
@@ -48,6 +49,18 @@ def get_api_key() -> str | None:
     value = os.environ.get("GROQ_API_KEY")
     if value:
         return str(value).strip()
+
+    secrets_path = PROJECT_ROOT / ".streamlit" / "secrets.toml"
+    if secrets_path.exists():
+        try:
+            with secrets_path.open("rb") as fh:
+                data = tomllib.load(fh)
+            value = data.get("GROQ_API_KEY")
+            if value:
+                return str(value).strip()
+        except Exception:
+            pass
+
     return None
 
 
