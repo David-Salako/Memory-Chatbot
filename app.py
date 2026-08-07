@@ -30,12 +30,15 @@ if groq is None:
 api_key = get_api_key()
 
 if not api_key:
-    st.error(
-        "No Groq API key found. Set `GROQ_API_KEY` as an environment variable, "
-        "or add it to `.streamlit/secrets.toml` as:\n\n"
-        "```toml\nGROQ_API_KEY = \"your-key-here\"\n```"
-    )
-    st.stop()
+    st.caption("No Groq API key was found. Enter one below for this session.")
+    api_key = st.text_input("Groq API key", type="password", key="groq_api_key_input")
+    if api_key:
+        api_key = api_key.strip()
+    else:
+        st.error(
+            "No Groq API key found. Enter it above, or configure it in Streamlit secrets as `GROQ_API_KEY`."
+        )
+        st.stop()
 
 try:
     client = get_client(api_key)

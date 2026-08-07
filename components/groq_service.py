@@ -37,18 +37,36 @@ _load_env_file()
 
 
 def get_api_key() -> str | None:
-    """Check Streamlit secrets first, then fall back to environment variables and a local secrets file."""
+    """Check Streamlit secrets, environment variables, local config files, and a session-provided override."""
     try:
-        if "GROQ_API_KEY" in st.secrets:
-            value = st.secrets["GROQ_API_KEY"]
-            if value:
-                return str(value).strip()
+        provided_value = st.session_state.get("groq_api_key_input")
+        if provided_value:
+            return str(provided_value).strip()
     except Exception:
         pass
 
-    value = os.environ.get("GROQ_API_KEY")
-    if value:
-        return str(value).strip()
+    for key_name in ("GROQ_API_KEY", "groq_api_key"):
+        try:
+            if key_name in st.secrets:
+                value = st.secrets[key_name]
+                if value:
+                    return str(value).strip()
+        except Exception:
+            pass
+
+        value = os.environ.get(key_name)
+        if value:
+            return str(value).strip()
+
+    try:
+        groq_section = st.secrets.get("groq", {})
+        if isinstance(groq_section, dict):
+            for key_name in ("api_key", "API_KEY"):
+                value = groq_section.get(key_name)
+                if value:
+                    return str(value).strip()
+    except Exception:
+        pass
 
     secrets_path = PROJECT_ROOT / ".streamlit" / "secrets.toml"
     if secrets_path.exists():
