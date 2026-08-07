@@ -1,14 +1,23 @@
-﻿"""
-Main chat UI: renders message history, takes new input, and orchestrates
-a full turn (validate -> call Groq -> prune -> rerun).
-"""
-
 import streamlit as st
-from groq import APIError, APIConnectionError, RateLimitError, AuthenticationError
 
 from components.validation import validate_input
 from components.memory_manager import apply_sliding_window
 from components.groq_service import call_groq
+
+try:
+    from groq import APIError, APIConnectionError, RateLimitError, AuthenticationError
+except ImportError:  # pragma: no cover - handled for Streamlit deployment
+    class APIError(Exception):
+        pass
+
+    class APIConnectionError(Exception):
+        pass
+
+    class RateLimitError(Exception):
+        pass
+
+    class AuthenticationError(Exception):
+        pass
 
 
 def render_message_history() -> None:
@@ -26,10 +35,12 @@ def handle_user_turn(client, user_input: str) -> None:
         st.error(f"⚠️ {error_msg}")
         return
 
+    # 1. Ingest & append the user's message
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user", avatar="🧑"):
         st.markdown(user_input)
 
+    # 2. Transmit the full history to Groq & record the response
     with st.chat_message("assistant", avatar="🤖"):
         placeholder = st.empty()
         placeholder.markdown("Thinking...")
@@ -58,5 +69,6 @@ def handle_user_turn(client, user_input: str) -> None:
         except Exception as e:
             placeholder.error(f"Unexpected error: {e}")
 
+    # 3. Apply sliding window (FIFO) pruning after the turn completes
     st.session_state.messages = apply_sliding_window(st.session_state.messages)
     st.rerun()
