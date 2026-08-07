@@ -34,6 +34,7 @@ if not api_key:
     api_key = st.text_input("Groq API key", type="password", key="groq_api_key_input")
     if api_key:
         api_key = api_key.strip()
+        st.session_state["groq_api_key"] = api_key
     else:
         st.error(
             "No Groq API key found. Enter it above, or configure it in Streamlit secrets as `GROQ_API_KEY`."

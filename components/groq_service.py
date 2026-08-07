@@ -45,6 +45,13 @@ def get_api_key() -> str | None:
     except Exception:
         pass
 
+    try:
+        session_key = st.session_state.get("groq_api_key")
+        if session_key:
+            return str(session_key).strip()
+    except Exception:
+        pass
+
     for key_name in ("GROQ_API_KEY", "groq_api_key"):
         try:
             if key_name in st.secrets:
